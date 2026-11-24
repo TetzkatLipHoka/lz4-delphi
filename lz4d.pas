@@ -383,7 +383,7 @@ var
   //stream block data element size
 //  LChunkSize:       Cardinal;
 begin
-//  Result := 0;
+  Result := 0; // D7: W1035 "might be undefined" otherwise
   try
     // * Prepare Decoding * //
 

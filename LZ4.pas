@@ -47,12 +47,15 @@ const
   HEADER_FRAME_ = AnsiString( 'lz4f' );
   HEADER_FRAME_LEN_ = Length( HEADER_FRAME_ );
 type
+  {$IF CompilerVersion < 21} // D7..D2009: NativeUInt is missing or broken (C1118 with $R+)
+  NativeUInt = Cardinal;
+  {$IFEND}
   tHeader = Array [ 0..HEADER_LEN_-1 ] of AnsiChar;
   pHeader = ^tHeader;
   tHeaderHC = Array [ 0..HEADER_HC_LEN_-1 ] of AnsiChar;
   pHeaderHC = ^tHeaderHC;
   tHeaderFrame = Array [ 0..HEADER_FRAME_LEN_-1 ] of AnsiChar;
-  pHeaderFrame = ^tHeaderFrame; // was ^tHeaderHC (5 characters): frame headers were never detected
+  pHeaderFrame = ^tHeaderFrame;
 
 function CompressLZ4( Source : PByte; Len : Cardinal; var Compressed : TByteDynArray; Header : boolean = False ) : Int64;
 var

@@ -38,7 +38,7 @@ if ($D7) {
     Write-Host "=== $t (Delphi 7) ===" -ForegroundColor Cyan
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "$D7Root\bin\dcc32.exe"
-    $psi.Arguments = "-B -U`"$D7Root\lib`" -N0`"$PSScriptRoot\dcuD7`" -E`"$PSScriptRoot\outD7`" `"$PSScriptRoot\$t.dpr`""
+    $psi.Arguments = "-B -`$R+ -`$Q+ -U`"$D7Root\lib`" -N0`"$PSScriptRoot\dcuD7`" -E`"$PSScriptRoot\outD7`" `"$PSScriptRoot\$t.dpr`""
     $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
     $psi.WorkingDirectory = $PSScriptRoot
