@@ -32,6 +32,7 @@ var
   Fails: Integer = 0;
   InS, OutS, BackS: TMemoryStream;
   Ver: AnsiString;
+  P: Pointer;
 
 procedure Check(const aName: string; Cond: Boolean);
 begin
@@ -95,6 +96,38 @@ begin
       Check('LZ4-Frame roundtrip byte-identical',
         (n = Length(Data)) and CompareMem(@Data[0], @Back[0], Length(Data)));
     end;
+
+    // --- 3b) 2026-11-24 regressions ---
+    // 'lz4f' data through ExtractLZ4 (frame header was never detected: pHeaderFrame pointed to the
+    // 5-char type, the data fell through to 'lz4' -> garbage size; behind it a self-recursion)
+    n := CompressLZ4_Frame(@Data[0], Length(Data), Comp, True{Header});
+    Back := nil;
+    n := ExtractLZ4(@Comp[0], Length(Comp), Back);
+    Check('ExtractLZ4 detects lz4f and decodes the frame',
+      (n = Length(Data)) and CompareMem(@Data[0], @Back[0], Length(Data)));
+    n := ExtractLZ4(@Comp[0], Length(Comp), P);
+    Check('ExtractLZ4 (pointer) detects lz4f', (n = Length(Data)) and CompareMem(@Data[0], P, Length(Data)));
+    FreeMem(P); P := nil;
+    // block data through ExtractLZ4_Frame
+    n := CompressLZ4_HC(@Data[0], Length(Data), Comp, True{Header});
+    n := ExtractLZ4_Frame(@Comp[0], Length(Comp), Back);
+    Check('ExtractLZ4_Frame hands lz4hc to the block decoder', (n = Length(Data)) and CompareMem(@Data[0], @Back[0], Length(Data)));
+    // truncated / corrupt / short input: negative, nothing returned, no exception
+    n := CompressLZ4(@Data[0], Length(Data), Comp, True{Header});
+    n := ExtractLZ4(@Comp[0], Length(Comp) - 100, Back);
+    Check('ExtractLZ4 truncated -> negative, empty', (n < 0) and (Length(Back) = 0));
+    n := CompressLZ4_Frame(@Data[0], Length(Data), Comp, True{Header});
+    n := ExtractLZ4_Frame(@Comp[0], Length(Comp) - 100, Back);
+    Check('ExtractLZ4_Frame truncated -> negative, empty', (n < 0) and (Length(Back) = 0));
+    n := CompressLZ4(@Data[0], Length(Data), Comp, True{Header});
+    PCardinal(@Comp[3])^ := $7FFFFFFF; // absurd original size
+    n := ExtractLZ4(@Comp[0], Length(Comp), Back);
+    Check('ExtractLZ4 absurd size -> negative (no out-of-memory)', (n < 0) and (Length(Back) = 0));
+    SetLength(Comp, 2); Comp[0] := Ord('l'); Comp[1] := Ord('z');
+    n := ExtractLZ4(@Comp[0], 2, Back);
+    Check('ExtractLZ4 2 bytes -> negative', (n < 0) and (Length(Back) = 0));
+    n := ExtractLZ4_Frame(@Comp[0], 2, Back);
+    Check('ExtractLZ4_Frame 2 bytes -> negative', (n < 0) and (Length(Back) = 0));
 
     // --- 4) stream API ---
     InS := TMemoryStream.Create;

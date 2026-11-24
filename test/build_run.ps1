@@ -1,12 +1,12 @@
 # LZ4 include test suite (v1.10.0): struct layout guard + functional roundtrip
-# Builds and runs pSizes + pRoundtrip for Win32 and Win64 (Delphi 13.1);
+# Builds and runs pSizes + pRoundtrip for Win32 and Win64 (Delphi 13.2);
 # with -D7 additionally cross-builds with Delphi 7 (oldest supported compiler).
 # Exit code 0 = all green.
 param(
-  [string]$Dcc32 = 'C:\delphi\13.1\bin\dcc32.exe',
-  [string]$Dcc64 = 'C:\delphi\13.1\bin\dcc64.exe',
-  [string]$Lib32 = 'C:\delphi\13.1\lib\win32\release',
-  [string]$Lib64 = 'C:\delphi\13.1\lib\win64\release',
+  [string]$Dcc32 = 'C:\delphi\13.2\bin\dcc32.exe',
+  [string]$Dcc64 = 'C:\delphi\13.2\bin\dcc64.exe',
+  [string]$Lib32 = 'C:\delphi\13.2\lib\win32\release',
+  [string]$Lib64 = 'C:\delphi\13.2\lib\win64\release',
   [switch]$D7,
   [string]$D7Root = 'C:\delphi\7'
 )
@@ -20,6 +20,7 @@ foreach ($t in 'pSizes','pRoundtrip') {
     $dcc = if ($p -eq '32') { $Dcc32 } else { $Dcc64 }
     $lib = if ($p -eq '32') { $Lib32 } else { $Lib64 }
     New-Item -ItemType Directory -Force "out$p","dcu$p" | Out-Null
+    Remove-Item "out$p\$t.exe" -ErrorAction SilentlyContinue # never run a stale binary after a failed build
     Write-Host "=== $t (Win$p) ===" -ForegroundColor Cyan
     & $dcc -B --no-config -NS"$ns" -U"$lib" -E"out$p" -NU"dcu$p" "$t.dpr" 2>&1 |
       Where-Object { $_ -match 'Error|Fatal|Warning' } | ForEach-Object { Write-Host $_ -ForegroundColor Yellow }

@@ -74,6 +74,21 @@ Only necessary results are shown:
     LZ4_compress_continue        : 276676254 -> 168943960 (61.06%),  330.7 MB/s
     LZ4_decompress_safe          : 276676254 ->                     1645.6 MB/s
 
+Changes
+==========
+
+2026-11-24 (`LZ4.pas`, tests in `test/pRoundtrip.dpr`, `test/build_run.ps1 -D7` green on Delphi 13.2 Win32/Win64 and Delphi 7):
+
+- `ExtractLZ4` with `'lz4f'` data called itself again instead of `ExtractLZ4_Frame`. The result was an endless recursion: `EStackOverflow`, measured with the old unit.
+- `pHeaderFrame` pointed to the 5-character `'lz4hc'` type, so the 4-character `'lz4f'` header was compared over 5 bytes.
+- Header checks read up to 5 bytes without checking the length of the buffer first.
+- `ExtractLZ4_Frame` passed `Cardinal` variables to `LZ4F_decompress`, which expects `size_t*`. On Win64 that wrote and read 8 bytes into and out of 4-byte variables. The sizes are now `NativeUInt`.
+- `CompressLZ4_Frame` did not check for errors with `LZ4F_isError`. On Win32, an error code (about 4·10⁹) was taken as the compressed size, and an error was returned as a positive `1`.
+- The extract functions now return a negative value on corrupt or truncated data, with an empty result:
+  - The decoded size must match the stored size.
+  - An absurd stored size is rejected instead of ending in an out-of-memory exception. LZ4 cannot expand by more than 255:1.
+- `test/build_run.ps1` no longer runs a stale binary after a failed build.
+
 Support
 ==========
 
