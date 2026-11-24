@@ -36,6 +36,7 @@ uses
 {$IFDEF TESTCASE}
   Classes, SysUtils, Dialogs,
 {$ENDIF TESTCASE}
+  lz4d.Imports, // NativeUInt = Cardinal below D2010 (C1118 with $R+ otherwise)
   lz4d.lz4, lz4d.lz4frame;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,9 +48,6 @@ const
   HEADER_FRAME_ = AnsiString( 'lz4f' );
   HEADER_FRAME_LEN_ = Length( HEADER_FRAME_ );
 type
-  {$IF CompilerVersion < 21} // D7..D2009: NativeUInt is missing or broken (C1118 with $R+)
-  NativeUInt = Cardinal;
-  {$IFEND}
   tHeader = Array [ 0..HEADER_LEN_-1 ] of AnsiChar;
   pHeader = ^tHeader;
   tHeaderHC = Array [ 0..HEADER_HC_LEN_-1 ] of AnsiChar;
